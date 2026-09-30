@@ -1,0 +1,31 @@
+import { Activity, ArrowRight, BatteryCharging, Bolt, CircleHelp, Droplets, Leaf, Radio, ShieldCheck, SunMedium, Zap } from 'lucide-react';
+import { DataChart } from '../components/Charts';
+import { SectionHeading, SourceNote, StatusBadge, WhyButton } from '../components/Shared';
+import { timeAgo } from '../lib/model';
+import type { FieldData, View } from '../lib/types';
+
+export function Energy({selected,navigate,why}: {selected:FieldData;navigate:(v:View)=>void;why:(id:string,kind:'energy')=>void}) {
+  const e=selected.energy;
+  const chart=e.history.map(row=>({label:new Date(row.timestamp).toLocaleTimeString('en-IN',{hour:'numeric'}),generated:row.generation_kwh,pump:row.pump_energy_kwh}));
+  const voltage=e.history.map(row=>({label:new Date(row.timestamp).toLocaleTimeString('en-IN',{hour:'numeric'}),voltage:row.node_voltage}));
+  const canPower=e.energy_status==='SUFFICIENT';
+  return <div className="page-stack"><div className="page-intro"><div><p className="eyebrow">SOLAR + BIOELECTROCHEMICAL SENSING</p><h1>Energy that grows with you.</h1><p>Make the most of the sun. Learn from the signals beneath the soil.</p></div><StatusBadge label={e.energy_status==='SUFFICIENT'?'Energy available':'Low energy'} tone={canPower?'green':'amber'}/></div>
+    <section className="energy-hero"><div><span className="energy-hero-icon"><SunMedium size={24}/></span><p className="eyebrow">DISTRIBUTED SOLAR POWER</p><h2>{e.solar_kw.toFixed(1)} <small>kW</small></h2><p>Solar output available now <span>·</span> {e.generation_kwh.toFixed(1)} kWh generated today</p><button className="button button--light" onClick={()=>navigate('irrigation')}>Plan a solar-powered cycle <ArrowRight size={17}/></button></div>
+      <div className="energy-sun-art" aria-hidden="true"><div className="sun-core"/><div className="sun-orbit sun-orbit--one"/><div className="sun-orbit sun-orbit--two"/><div className="sun-orbit sun-orbit--three"/></div></section>
+    <div className="energy-stats"><div className="surface energy-stat"><span><SunMedium size={20}/></span><small>ENERGY GENERATED</small><strong>{e.generation_kwh.toFixed(1)} <em>kWh</em></strong><p>Simulated today</p></div>
+      <div className="surface energy-stat"><span><Bolt size={20}/></span><small>PUMP ENERGY</small><strong>{e.pump_energy_kwh.toFixed(1)} <em>kWh</em></strong><p>Simulated today</p></div>
+      <div className="surface energy-stat"><span><BatteryCharging size={20}/></span><small>BATTERY / CAPACITOR</small><strong>{e.battery_pct.toFixed(0)}<em>%</em></strong><div className="battery-track"><i style={{width:`${e.battery_pct}%`}}/></div></div>
+      <div className="surface energy-stat"><span><Zap size={20}/></span><small>ROOT-TO-POWER NODE</small><strong>{e.node_voltage.toFixed(2)} <em>V</em></strong><p>Environmental signal</p></div></div>
+    <div className="energy-charts"><section className="surface"><SectionHeading eyebrow="RENEWABLE ENERGY HISTORY" title="Generation & pump use" description="Cumulative simulated energy through the day."/><DataChart data={chart} series={[{key:'generated',label:'Generated',color:'#b99b4d'},{key:'pump',label:'Pump use',color:'#3b8266'}]} type="line" unit=" kWh" height={245}/><SourceNote>Simulated solar and pump telemetry · {timeAgo(e.timestamp)}</SourceNote></section>
+      <section className="surface"><SectionHeading eyebrow="ROOT-TO-POWER SIGNAL" title="The node beneath the soil" description="A bioelectric trend, not a plant-health meter."/><DataChart data={voltage} series={[{key:'voltage',label:'Node voltage',color:'#47886a'}]} type="area" domain={[.35,.6]} unit=" V" height={245}/><SourceNote>{e.node_energy_mwh.toFixed(2)} mWh energy harvested · simulated node data</SourceNote></section></div>
+    <div className="energy-bottom"><section className="surface node-panel"><div className="mini-section-heading"><div><p className="eyebrow">BIOELECTRIC SENSING NODE</p><h2>One signal among many.</h2></div><Radio size={22} className="muted-icon"/></div><p>We learn from changes in the node's bioelectric signal <strong>alongside</strong> soil moisture, temperature, humidity, growth stage and past crop condition — never from voltage alone.</p>
+        <div className="node-signal-grid"><div><Activity size={18}/><span>Node voltage<strong>{e.node_voltage.toFixed(2)} V</strong></span></div><div><Droplets size={18}/><span>Soil moisture<strong>{selected.sensor.soil_moisture.toFixed(1)}%</strong></span></div><div><Leaf size={18}/><span>Crop stage<strong>{selected.growth.stage}</strong></span></div><div><Radio size={18}/><span>Communication<strong>{e.comm_status.toLowerCase()}</strong></span></div></div>
+        <div className="node-associations"><strong>Locally learned associations <small>· {e.node_associations?.sample_count ?? 0} paired readings</small></strong>
+          <div>{([['Soil moisture','soil_moisture'],['Air temperature','air_temperature'],['Humidity','humidity']] as const).map(([label,key])=>{
+            const value=e.node_associations?.correlations[key];return <span key={key}>{label}<b>{value==null?'—':`r ${value>=0?'+':''}${value.toFixed(2)}`}</b></span>;})}</div>
+          <p>Exploratory correlations from simulated, paired readings. No causal claim or plant-health diagnosis.</p></div>
+        <div className="node-status-row"><StatusBadge label={selected.health.node_anomaly?'Combined-signal anomaly':'No combined-signal anomaly'} tone={selected.health.node_anomaly?'amber':'green'}/><WhyButton onClick={()=>why(selected.id,'energy')} label="Why?"/></div></section>
+      <section className="energy-window"><span className="energy-window-icon"><ShieldCheck size={22}/></span><p className="eyebrow">IRRIGATION ENERGY WINDOW</p><h2>{canPower?'Enough energy for the plan.':'Hold until energy is available.'}</h2><p>{selected.name}'s suggested cycle needs about <strong>{selected.irrigation.energy_kwh_est} kWh</strong>. Solar output is <strong>{e.solar_kw.toFixed(1)} kW</strong>, and storage is <strong>{e.battery_pct}%</strong>. Safety checks still apply.</p><button className="button button--light" onClick={()=>navigate('irrigation')}>View irrigation plan <ArrowRight size={17}/></button>
+        <div className="window-note"><CircleHelp size={15}/> Tiny node energy is for sensing, not for running a water pump.</div></section></div>
+  </div>;
+}
