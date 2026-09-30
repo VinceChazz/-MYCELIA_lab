@@ -1,0 +1,27 @@
+# Private runtime configuration and local farm data
+.env
+**/.env
+!.env.example
+*.sqlite
+*.sqlite3
+*.sqlite-shm
+*.sqlite-wal
+*.db
+*.db-shm
+*.db-wal
+/data/local_database/*
+!/data/local_database/.gitkeep
+# Python / JS build output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.DS_Store
+
+# Arena/sandbox screenshots and temporary browser libraries
+.arena/
